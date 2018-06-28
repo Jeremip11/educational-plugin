@@ -15,6 +15,7 @@ import com.jetbrains.edu.learning.EduUtils;
 import com.jetbrains.edu.learning.StudyTaskManager;
 import com.jetbrains.edu.learning.courseFormat.Course;
 import com.jetbrains.edu.learning.courseFormat.Lesson;
+import com.jetbrains.edu.learning.courseFormat.Section;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
@@ -58,6 +59,13 @@ public class CCWrapWithSection extends DumbAwareAction {
     if (!CCUtils.wrapIntoSection(project, course, lessonsToWrap, sectionName)) return;
     ProjectView.getInstance(project).refresh();
     StepikCourseChangeHandler.contentChanged(course);
+    Section section = course.getSection(sectionName);
+    assert section != null;
+    for (Lesson lesson : section.getLessons()) {
+      if (lesson.getId() != 0) {
+        StepikCourseChangeHandler.infoChanged(lesson);
+      }
+    }
   }
 
   @NotNull

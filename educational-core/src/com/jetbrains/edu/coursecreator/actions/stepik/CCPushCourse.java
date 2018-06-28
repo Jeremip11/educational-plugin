@@ -21,7 +21,6 @@ import com.jetbrains.edu.learning.statistics.EduUsagesCollector;
 import com.jetbrains.edu.learning.stepik.StepikUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.util.Collections;
 
 import static com.jetbrains.edu.coursecreator.stepik.CCStepikConnector.*;
@@ -63,17 +62,8 @@ public class CCPushCourse extends DumbAwareAction {
 
   public static boolean doPush(Project project, Course course) {
     if (course instanceof RemoteCourse) {
-      if (CourseExt.getHasSections(course) && CourseExt.getHasTopLevelLessons(course)) {
-        boolean hasUnpushedLessons = course.getLessons().stream().anyMatch(lesson -> lesson.getId() == 0);
-        if (hasUnpushedLessons) {
-          int result = Messages
-            .showYesNoDialog(project, "Since you have sections, we have to wrap top-level lessons into section before upload",
-                             "Wrap Lessons Into Sections", "Wrap and Post", "Cancel", null);
-          if (result == Messages.YES) {
-            wrapUnpushedLessonsIntoSections(project, course);
-          }
-        }
-      }
+      askToWrapTopLevelLessons(project, course);
+
       ProgressManager.getInstance().run(new Task.Modal(project, "Updating Course", true) {
         @Override
         public void run(@NotNull ProgressIndicator indicator) {
@@ -114,6 +104,20 @@ public class CCPushCourse extends DumbAwareAction {
       postCourseWithProgress(project, course);
     }
     return false;
+  }
+
+  private static void askToWrapTopLevelLessons(Project project, Course course) {
+    if (CourseExt.getHasSections(course) && CourseExt.getHasTopLevelLessons(course)) {
+      boolean hasUnpushedLessons = course.getLessons().stream().anyMatch(lesson -> lesson.getId() == 0);
+      if (hasUnpushedLessons) {
+        int result = Messages
+          .showYesNoDialog(project, "Since you have sections, we have to wrap top-level lessons into section before upload",
+                           "Wrap Lessons Into Sections", "Wrap and Post", "Cancel", null);
+        if (result == Messages.YES) {
+          wrapUnpushedLessonsIntoSections(project, course);
+        }
+      }
+    }
   }
 
   private static void updateCourseContent(@NotNull ProgressIndicator indicator, Course course, Project project) {

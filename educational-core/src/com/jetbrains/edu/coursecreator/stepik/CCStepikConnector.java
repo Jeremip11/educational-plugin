@@ -301,7 +301,7 @@ public class CCStepikConnector {
     return updated;
   }
 
-  private static Section copySection(@NotNull Section section) {
+  public static Section copySection(@NotNull Section section) {
     Section sectionToPost = new Section();
     sectionToPost.setName(section.getName());
     sectionToPost.setPosition(section.getPosition());
@@ -371,7 +371,7 @@ public class CCStepikConnector {
     }
   }
 
-  private static int postUnit(int lessonId, int position, int sectionId, Project project) {
+  public static int postUnit(int lessonId, int position, int sectionId, Project project) {
     if (!checkIfAuthorized(project, "postUnit")) return lessonId;
 
     final HttpPost request = new HttpPost(StepikNames.STEPIK_API_URL + StepikNames.UNITS);
@@ -808,7 +808,7 @@ public class CCStepikConnector {
   }
 
   public static int postLesson(@NotNull final Project project, @NotNull final Lesson lesson, int position, int sectionId) {
-    Lesson postedLesson = postLessonInfo(project, lesson, sectionId);
+    Lesson postedLesson = postLessonInfo(project, lesson, sectionId, position);
 
     if (postedLesson == null) {
       return -1;
@@ -825,7 +825,7 @@ public class CCStepikConnector {
     return postedLesson.getId();
   }
 
-  public static Lesson postLessonInfo(@NotNull Project project, @NotNull Lesson lesson, int sectionId) {
+  public static Lesson postLessonInfo(@NotNull Project project, @NotNull Lesson lesson, int sectionId, int position) {
     if (!checkIfAuthorized(project, "postLesson")) return null;
     Course course = StudyTaskManager.getInstance(project).getCourse();
     assert course != null;
@@ -857,7 +857,7 @@ public class CCStepikConnector {
 
       postedLesson = getLessonFromString(responseString);
       if (postedLesson != null) {
-        postedLesson.unitId = postUnit(postedLesson.getId(), lesson.getIndex(), sectionId, project);
+        lesson.unitId = postUnit(postedLesson.getId(), position, sectionId, project);
       }
     }
     catch (IOException e) {
@@ -897,7 +897,12 @@ public class CCStepikConnector {
   }
 
   public static void deleteLesson(@NotNull Project project, final int lessonId) {
-    final HttpDelete request = new HttpDelete(StepikNames.STEPIK_API_URL + StepikNames.SECTIONS + "/" + lessonId);
+    final HttpDelete request = new HttpDelete(StepikNames.STEPIK_API_URL + StepikNames.LESSONS + "/" + lessonId);
+    deleteFromStepik(project, request);
+  }
+
+  public static void deleteUnit(@NotNull Project project, final int unitId) {
+    final HttpDelete request = new HttpDelete(StepikNames.STEPIK_API_URL + StepikNames.UNITS + "/" + unitId);
     deleteFromStepik(project, request);
   }
 

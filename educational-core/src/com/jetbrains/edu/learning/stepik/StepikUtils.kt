@@ -93,11 +93,11 @@ object StepikUtils {
     else {
       val topLevelLesson = course.lessons.first { it.stepikChangeStatus == StepikChangeStatus.UP_TO_DATE }
       val id = CCStepikConnector.findTopLevelLessonsSection(project, topLevelLesson)
-      if (id != -1) {
-        return id
+      return if (id != -1) {
+        id
       }
       else {
-        return CCStepikConnector.postTopLevelLessonsSection(project, course)
+        CCStepikConnector.postTopLevelLessonsSection(project, course)
       }
     }
   }

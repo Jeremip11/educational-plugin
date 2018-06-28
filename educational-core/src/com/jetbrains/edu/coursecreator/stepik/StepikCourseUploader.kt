@@ -23,6 +23,7 @@ class StepikCourseUploader(val project: Project, val course: RemoteCourse) {
   private val lessonsToPush: ArrayList<Lesson> = ArrayList()
   private var lessonsToDelete: ArrayList<Int> = ArrayList()
   private var lessonsInfoToUpdate: ArrayList<Lesson> = ArrayList()
+  private var lessonsToMove: ArrayList<Lesson> = ArrayList()
 
   private val tasksToPush: ArrayList<Task> = ArrayList()
   private var tasksToDelete: ArrayList<Int> = ArrayList()
@@ -68,7 +69,13 @@ class StepikCourseUploader(val project: Project, val course: RemoteCourse) {
     lessonsToPush.forEach {
       val sectionId: Int = sectionId(it)
 
-      postLessonInfo(project, it, sectionId)
+      postLessonInfo(project, it, sectionId, it.index)
+    }
+
+    lessonsToMove.forEach {
+      val sectionId = if (it.section == null) StepikUtils.getTopLevelSectionId(project, course) else it.section!!.id
+      deleteUnit(project, it.unitId)
+      postUnit(it.id, it.index, sectionId, project)
     }
 
     lessonsToDelete.forEach {
@@ -92,7 +99,7 @@ class StepikCourseUploader(val project: Project, val course: RemoteCourse) {
 
   private fun updateSections() {
     sectionsToPush.forEach {
-      postSectionInfo(project, it, course.id)
+      postSectionInfo(project, copySection(it), course.id)
     }
 
     sectionsToDelete.forEach {
@@ -216,7 +223,6 @@ class StepikCourseUploader(val project: Project, val course: RemoteCourse) {
     val stepSources = StepikConnector.getStepSources(stringIds)
     val tasksFromStep = StepikConnector.getTasks(course, stringIds, stepSources)
     tasksToDelete.addAll(tasksFromStep.filter { it.updateDate <= lastUpdateDate }.map { it.stepId })
-
   }
 
   private fun processTaskChanges() {
@@ -230,6 +236,7 @@ class StepikCourseUploader(val project: Project, val course: RemoteCourse) {
     val hasTopLevelLessons = !course.lessons.isEmpty()
     if (hasTopLevelLessons) {
       lessonsToPush.addAll(course.lessons.filter { it.id == 0 })
+      // process lessons moved to top-level
 
       val section = StepikConnector.getSection(courseInfo.sectionIds[0])
       val topLevelLessonsIds = course.lessons.map { it.id }
@@ -244,6 +251,10 @@ class StepikCourseUploader(val project: Project, val course: RemoteCourse) {
     }
     else {
       sectionsToPush.addAll(course.sections.filter { it.id == 0 })
+
+      for (sectionToPush in sectionsToPush) {
+        lessonsToMove.addAll(sectionToPush.lessons.filter { it.id > 0 })
+      }
 
       //remove additional materials sections
       val remoteSectionIds = courseInfo.sectionIds.subList(0, courseInfo.sectionIds.size - 2)
