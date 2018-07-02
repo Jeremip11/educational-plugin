@@ -1,5 +1,7 @@
 package com.jetbrains.edu.coursecreator.stepik
 
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.project.Project
 import com.jetbrains.edu.coursecreator.stepik.CCStepikConnector.*
 import com.jetbrains.edu.learning.courseFormat.Lesson
@@ -37,8 +39,15 @@ class StepikCourseUploader(val project: Project, val course: RemoteCourse) {
     processLessonChanges(lastUpdateDate)
     processTaskChanges()
 
-    pushChanges()
-    course.setPushed()
+    if (isUpToDate()) {
+      val notification = Notification("upload.course", "Nothing to upload", "All course items is up to date", NotificationType.INFORMATION)
+      notification.notify(project)
+
+    }
+    else {
+      pushChanges()
+      course.setPushed()
+    }
   }
 
   private fun pushChanges() {
@@ -99,7 +108,8 @@ class StepikCourseUploader(val project: Project, val course: RemoteCourse) {
 
   private fun updateSections() {
     sectionsToPush.forEach {
-      postSectionInfo(project, copySection(it), course.id)
+      val sectionId = postSectionInfo(project, copySection(it), course.id)
+      it.id = sectionId
     }
 
     sectionsToDelete.forEach {
@@ -200,6 +210,12 @@ class StepikCourseUploader(val project: Project, val course: RemoteCourse) {
       }
     }
 
+    val lessonsToMoveIds = lessonsToMove.map { it.id }
+    val lessonsInfoAlreadyUpdated = lessonsInfoToUpdate.filter { it.id in lessonsToMoveIds }
+    for (lesson in lessonsInfoAlreadyUpdated) {
+      lessonsInfoToUpdate.remove(lesson)
+    }
+
     lessonsToDelete.addAll(StepikConnector.getUnits(
       deleteCandidates.map { it.toString() }.toTypedArray()).filter { it.updateDate <= lastUpdateDate }.map { it.id })
   }
@@ -266,6 +282,20 @@ class StepikCourseUploader(val project: Project, val course: RemoteCourse) {
         }
       }
     }
+  }
+
+  private fun isUpToDate(): Boolean {
+    return !courseInfoToUpdate
+        &&sectionsToPush.isEmpty()
+        && sectionsToDelete.isEmpty()
+        && sectionsInfoToUpdate.isEmpty()
+        && lessonsToPush.isEmpty()
+        && lessonsToDelete.isEmpty()
+        && lessonsToMove.isEmpty()
+        && lessonsInfoToUpdate.isEmpty()
+        && tasksToPush.isEmpty()
+        && tasksToUpdate.isEmpty()
+        && tasksToDelete.isEmpty()
   }
 }
 
