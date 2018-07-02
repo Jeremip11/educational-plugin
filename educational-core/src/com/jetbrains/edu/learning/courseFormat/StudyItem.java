@@ -1,5 +1,8 @@
 package com.jetbrains.edu.learning.courseFormat;
 
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class StudyItem {
@@ -61,4 +64,9 @@ public abstract class StudyItem {
    * @return Stepik id
    */
   public abstract int getId();
+
+  public abstract VirtualFile getDir(@NotNull Project project);
+
+  @NotNull
+  public abstract Course getCourse();
 }

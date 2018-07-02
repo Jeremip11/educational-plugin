@@ -315,4 +315,16 @@ public abstract class Task extends StudyItem {
   public int getId() {
     return myStepId;
   }
+
+  @Override
+  @Nullable
+  public VirtualFile getDir(@NotNull Project project) {
+    return getTaskDir(project);
+  }
+
+  @NotNull
+  @Override
+  public Course getCourse() {
+    return myLesson.getCourse();
+  }
 }

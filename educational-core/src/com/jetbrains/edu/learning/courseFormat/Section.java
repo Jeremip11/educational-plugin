@@ -2,8 +2,12 @@ package com.jetbrains.edu.learning.courseFormat;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.xmlb.annotations.Transient;
 import com.jetbrains.edu.learning.EduUtils;
 import com.jetbrains.edu.learning.stepik.StepikConnector;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Date;
@@ -11,7 +15,7 @@ import java.util.List;
 
 public class Section extends ItemContainer {
   public List<Integer> units;
-  private int course;
+  private int courseId;
   @Expose
   @SerializedName("title")
   private String name;
@@ -23,7 +27,11 @@ public class Section extends ItemContainer {
   @SerializedName("update_date")
   private Date myUpdateDate = new Date(0);
 
+  @Transient
+  private Course myCourse;
+
   public void init(@Nullable Course course, @Nullable StudyItem parentItem, boolean isRestarted) {
+    myCourse = course;
     int index = 1;
     for (StudyItem lesson : items) {
       if (lesson instanceof Lesson) {
@@ -42,16 +50,16 @@ public class Section extends ItemContainer {
     this.id = id;
   }
 
-  public void setCourse(int course) {
-    this.course = course;
+  public void setCourseId(int courseId) {
+    this.courseId = courseId;
   }
 
   public void setPosition(int position) {
     this.position = position;
   }
 
-  public int getCourse() {
-    return course;
+  public int getCourseId() {
+    return courseId;
   }
 
   public int getPosition() {
@@ -91,5 +99,20 @@ public class Section extends ItemContainer {
 
   public Date getUpdateDate() {
     return myUpdateDate;
+  }
+
+  @Override
+  @Nullable
+  public VirtualFile getDir(@NotNull Project project) {
+    return EduUtils.getCourseDir(project).findChild(getName());
+  }
+
+  @NotNull
+  public Course getCourse() {
+    return myCourse;
+  }
+
+  public void setCourse(Course course) {
+    myCourse = course;
   }
 }
