@@ -814,6 +814,7 @@ public class CCStepikConnector {
       return -1;
     }
     lesson.setId(postedLesson.getId());
+    lesson.unitId = postedLesson.unitId;
     for (Task task : lesson.getTaskList()) {
       final ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
       if (indicator != null) {
@@ -857,7 +858,7 @@ public class CCStepikConnector {
 
       postedLesson = getLessonFromString(responseString);
       if (postedLesson != null) {
-        lesson.unitId = postUnit(postedLesson.getId(), position, sectionId, project);
+        postedLesson.unitId = postUnit(postedLesson.getId(), position, sectionId, project);
       }
     }
     catch (IOException e) {
