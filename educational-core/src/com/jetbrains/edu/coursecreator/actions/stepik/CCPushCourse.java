@@ -15,13 +15,12 @@ import com.intellij.openapi.ui.Messages;
 import com.jetbrains.edu.coursecreator.CCUtils;
 import com.jetbrains.edu.coursecreator.stepik.StepikCourseUploader;
 import com.jetbrains.edu.learning.StudyTaskManager;
+import com.jetbrains.edu.learning.courseFormat.Course;
+import com.jetbrains.edu.learning.courseFormat.RemoteCourse;
 import com.jetbrains.edu.learning.courseFormat.*;
 import com.jetbrains.edu.learning.courseFormat.ext.CourseExt;
 import com.jetbrains.edu.learning.statistics.EduUsagesCollector;
-import com.jetbrains.edu.learning.stepik.StepikUtils;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Collections;
 
 import static com.jetbrains.edu.coursecreator.stepik.CCStepikConnector.*;
 

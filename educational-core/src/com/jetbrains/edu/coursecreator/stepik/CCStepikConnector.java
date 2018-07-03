@@ -735,7 +735,7 @@ public class CCStepikConnector {
 
     // Remove all tasks from Stepik which are not in our lessons now
     for (Integer step : taskIdsToDelete) {
-      deleteTask(project, step);
+      deleteTask(step);
     }
 
     for (Task task : localLesson.getTaskList()) {
@@ -892,27 +892,27 @@ public class CCStepikConnector {
     return null;
   }
 
-  public static void deleteSection(@NotNull Project project, final int sectionId) {
+  public static void deleteSection(final int sectionId) {
     final HttpDelete request = new HttpDelete(StepikNames.STEPIK_API_URL + StepikNames.SECTIONS + "/" + sectionId);
-    deleteFromStepik(project, request);
+    deleteFromStepik(request);
   }
 
-  public static void deleteLesson(@NotNull Project project, final int lessonId) {
+  public static void deleteLesson(final int lessonId) {
     final HttpDelete request = new HttpDelete(StepikNames.STEPIK_API_URL + StepikNames.LESSONS + "/" + lessonId);
-    deleteFromStepik(project, request);
+    deleteFromStepik(request);
   }
 
-  public static void deleteUnit(@NotNull Project project, final int unitId) {
+  public static void deleteUnit(final int unitId) {
     final HttpDelete request = new HttpDelete(StepikNames.STEPIK_API_URL + StepikNames.UNITS + "/" + unitId);
-    deleteFromStepik(project, request);
+    deleteFromStepik(request);
   }
 
-  public static void deleteTask(@NotNull Project project, int task) {
+  public static void deleteTask(int task) {
     final HttpDelete request = new HttpDelete(StepikNames.STEPIK_API_URL + StepikNames.STEP_SOURCES + task);
-    deleteFromStepik(project, request);
+    deleteFromStepik(request);
   }
 
-  private static void deleteFromStepik(@NotNull Project project, @NotNull HttpDelete request) {
+  private static void deleteFromStepik(@NotNull HttpDelete request) {
     try {
       final CloseableHttpClient client = StepikAuthorizedClient.getHttpClient();
       if (client == null) return;
@@ -923,9 +923,6 @@ public class CCStepikConnector {
       final StatusLine line = response.getStatusLine();
       if (line.getStatusCode() != HttpStatus.SC_NO_CONTENT) {
         LOG.error("Failed to delete item " + responseString);
-        final String detailString = getErrorDetail(responseString);
-
-        showErrorNotification(project, "Failed to delete item ", detailString);
       }
     }
     catch (IOException e) {

@@ -66,7 +66,7 @@ class StepikCourseUploader(val project: Project, val course: RemoteCourse) {
     }
 
     tasksToDelete.forEach {
-      deleteTask(project, it)
+      deleteTask(it)
     }
 
     tasksToUpdate.forEach {
@@ -83,12 +83,12 @@ class StepikCourseUploader(val project: Project, val course: RemoteCourse) {
 
     lessonsToMove.forEach {
       val sectionId = if (it.section == null) StepikUtils.getTopLevelSectionId(project, course) else it.section!!.id
-      deleteUnit(project, it.unitId)
+      deleteUnit(it.unitId)
       postUnit(it.id, it.index, sectionId, project)
     }
 
     lessonsToDelete.forEach {
-      deleteLesson(project, it)
+      deleteLesson(it)
     }
 
     lessonsInfoToUpdate.forEach {
@@ -105,7 +105,6 @@ class StepikCourseUploader(val project: Project, val course: RemoteCourse) {
     }
   }
 
-
   private fun updateSections() {
     sectionsToPush.forEach {
       val sectionId = postSectionInfo(project, copySection(it), course.id)
@@ -113,7 +112,7 @@ class StepikCourseUploader(val project: Project, val course: RemoteCourse) {
     }
 
     sectionsToDelete.forEach {
-      deleteSection(project, it)
+      deleteSection(it)
     }
 
     sectionsInfoToUpdate.forEach {
@@ -270,10 +269,11 @@ class StepikCourseUploader(val project: Project, val course: RemoteCourse) {
 
       for (sectionToPush in sectionsToPush) {
         lessonsToMove.addAll(sectionToPush.lessons.filter { it.id > 0 })
+        lessonsToPush.addAll(sectionToPush.lessons.filter { it.id == 0 })
       }
 
       //remove additional materials sections
-      val remoteSectionIds = courseInfo.sectionIds.subList(0, courseInfo.sectionIds.size - 2)
+      val remoteSectionIds = courseInfo.sectionIds.subList(0, courseInfo.sectionIds.size - 1)
       val sections = StepikConnector.getSections(remoteSectionIds.map { it.toString() }.toTypedArray())
       val localSectionIds = course.sections.map { it.id }
       for (section in sections) {
