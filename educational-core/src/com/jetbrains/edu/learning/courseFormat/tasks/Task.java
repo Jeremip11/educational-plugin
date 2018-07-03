@@ -22,9 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.io.IOException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Implementation of task which contains task files, tests, input file for tests
@@ -71,7 +69,7 @@ public abstract class Task extends StudyItem {
   public void init(@Nullable Course course, @Nullable final StudyItem parentItem, boolean isRestarted) {
     setLesson(parentItem instanceof Lesson ? (Lesson)parentItem : null);
     if (!isRestarted) myStatus = CheckStatus.Unchecked;
-    for (TaskFile taskFile : getTaskFiles().values()) {
+    for (TaskFile taskFile : getTaskFileValues()) {
       taskFile.initTaskFile(this, isRestarted);
     }
   }
@@ -286,7 +284,7 @@ public abstract class Task extends StudyItem {
   public boolean isValid(@NotNull Project project) {
     VirtualFile taskDir = getTaskDir(project);
     if (taskDir == null) return false;
-    for (TaskFile taskFile : getTaskFiles().values()) {
+    for (TaskFile taskFile : getTaskFileValues()) {
       VirtualFile file = EduUtils.findTaskFileInDir(taskFile, taskDir);
       if (file == null) continue;
       try {
@@ -326,5 +324,18 @@ public abstract class Task extends StudyItem {
   @Override
   public Course getCourse() {
     return myLesson.getCourse();
+  }
+
+  @NotNull
+  private Collection<TaskFile> getTaskFileValues() {
+    return getTaskFiles().values();
+  }
+
+  @SuppressWarnings("unused") //used for yaml deserialization
+  private void setTaskFileValues(List<TaskFile> taskFiles) {
+    this.taskFiles.clear();
+    for (TaskFile taskFile : taskFiles) {
+      this.taskFiles.put(taskFile.name, taskFile);
+    }
   }
 }
