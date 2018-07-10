@@ -58,7 +58,7 @@ public class CCWrapWithSection extends DumbAwareAction {
 
     Section section = CCUtils.wrapIntoSection(project, course, lessonsToWrap, sectionName);
     if (section == null) return;
-    YamlFormatSynchronizer.saveItem(section, project);
+    YamlFormatSynchronizer.saveItem(section);
     ProjectView.getInstance(project).refresh();
   }
 

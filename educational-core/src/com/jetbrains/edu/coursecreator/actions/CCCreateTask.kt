@@ -17,8 +17,11 @@ import com.jetbrains.edu.learning.courseFormat.tasks.EduTask
 import com.jetbrains.edu.learning.courseFormat.tasks.Task
 import icons.EducationalCoreIcons
 import java.io.IOException
-
 import java.util.Collections
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
+import kotlin.collections.component1
+import kotlin.collections.component2
 
 open class CCCreateTask : CCCreateStudyItemActionBase<Task>(EduNames.TASK, EducationalCoreIcons.Task) {
 
@@ -33,7 +36,7 @@ open class CCCreateTask : CCCreateStudyItemActionBase<Task>(EduNames.TASK, Educa
                              parentDirectory: VirtualFile, course: Course): VirtualFile? {
     val configurator = EduConfiguratorManager.forLanguage(course.languageById!!)
     val taskDir = configurator?.courseBuilder?.createTaskContent(project, item, parentDirectory, course)
-    YamlFormatSynchronizer.saveItem(item, project)
+    YamlFormatSynchronizer.saveItem(item)
     return taskDir
   }
 

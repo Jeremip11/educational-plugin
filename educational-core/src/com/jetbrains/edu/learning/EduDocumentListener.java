@@ -6,6 +6,7 @@ import com.intellij.openapi.editor.event.DocumentListener;
 import com.intellij.openapi.editor.impl.event.DocumentEventImpl;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
+import com.jetbrains.edu.coursecreator.configuration.YamlFormatSynchronizer;
 import com.jetbrains.edu.learning.courseFormat.AnswerPlaceholder;
 import com.jetbrains.edu.learning.courseFormat.TaskFile;
 import org.jetbrains.annotations.NotNull;
@@ -106,6 +107,7 @@ public class EduDocumentListener implements DocumentListener {
     } else {
       if (myTaskFile.isTrackLengths()) {
         answerPlaceholder.setPossibleAnswer(document.getText(TextRange.create(start, start + length)));
+        YamlFormatSynchronizer.saveItem(myTaskFile.getTask());
       }
     }
   }
