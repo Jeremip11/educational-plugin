@@ -156,6 +156,7 @@ public class CCStepikConnector {
 
       ApplicationManager.getApplication().invokeAndWait(() -> FileDocumentManager.getInstance().saveAllDocuments());
       postAdditionalFiles(course, project, courseOnRemote.getId(), sectionCount + 1);
+      courseOnRemote.init(null, null, true);
       StudyTaskManager.getInstance(project).setCourse(courseOnRemote);
       courseOnRemote.init(null, null, true);
       courseOnRemote.setUpdated();
@@ -289,11 +290,10 @@ public class CCStepikConnector {
     if (updated) {
       for (Lesson lesson : section.getLessons()) {
         if (lesson.getId() > 0) {
-          updateLesson(project, lesson, false);
+          updateLesson(project, lesson, false, section.getId());
         }
         else {
-          postLesson(project, lesson);
-          lesson.unitId = postUnit(lesson.getId(), lesson.getIndex(), section.getId(), project);
+          postLesson(project, lesson, lesson.getIndex(), section.getId());
         }
       }
     }
@@ -322,8 +322,7 @@ public class CCStepikConnector {
         indicator.checkCanceled();
         indicator.setText2("Publishing lesson " + lesson.getIndex());
       }
-      final int lessonId = postLesson(project, lesson);
-      lesson.unitId = postUnit(lessonId, position, sectionId, project);
+      postLesson(project, lesson, position, sectionId);
       if (indicator != null) {
         indicator.setFraction((double)lesson.getIndex() / course.getLessons().size());
         indicator.checkCanceled();
@@ -360,17 +359,19 @@ public class CCStepikConnector {
     final Lesson postedLesson = CCUtils.createAdditionalLesson(course, project, StepikNames.PYCHARM_ADDITIONAL);
     if (postedLesson != null) {
       postedLesson.setId(lesson.getId());
-      postedLesson.setSection(lesson.getSection());
+      Section section = lesson.getSection();
+      assert section != null;
+      postedLesson.setSection(section);
       final ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
       if (indicator != null) {
         indicator.setText2("Publishing additional files");
       }
 
-      updateLesson(project, postedLesson, false);
+      updateLesson(project, postedLesson, false, section.getId());
     }
   }
 
-  public static int postUnit(int lessonId, int position, int sectionId, Project project) {
+  private static int postUnit(int lessonId, int position, int sectionId, Project project) {
     if (!checkIfAuthorized(project, "postUnit")) return lessonId;
 
     final HttpPost request = new HttpPost(StepikNames.STEPIK_API_URL + StepikNames.UNITS);
@@ -660,7 +661,9 @@ public class CCStepikConnector {
     return additionalMaterialsUpdated.get();
   }
 
-  public static Lesson updateLessonInfo(@NotNull final Project project, @NotNull final Lesson lesson, boolean showNotification) {
+  public static Lesson updateLessonInfo(@NotNull final Project project,
+                                        @NotNull final Lesson lesson,
+                                        boolean showNotification, int sectionId1) {
     if (!checkIfAuthorized(project, "update lesson")) return null;
 
     final HttpPut request = new HttpPut(StepikNames.STEPIK_API_URL + StepikNames.LESSONS + String.valueOf(lesson.getId()));
@@ -692,18 +695,8 @@ public class CCStepikConnector {
         return null;
       }
 
-      int sectionId;
-      if (lesson.getSection() == null) {
-        RemoteCourse course = (RemoteCourse)StudyTaskManager.getInstance(project).getCourse();
-        assert course != null;
-        sectionId = course.getSectionIds().get(0);
-      }
-      else {
-        sectionId = lesson.getSection().getId();
-      }
-
       if (!lesson.isAdditional()) {
-        updateUnit(lesson.unitId, lesson.getId(), lesson.getIndex(), sectionId, project);
+        updateUnit(lesson.unitId, lesson.getId(), lesson.getIndex(), sectionId1, project);
       }
 
       return new Gson().fromJson(responseString, StepikWrappers.LessonContainer.class).lessons.get(0);
@@ -716,8 +709,8 @@ public class CCStepikConnector {
 
   public static int updateLesson(@NotNull final Project project,
                                  @NotNull final Lesson lesson,
-                                 boolean showNotification) {
-    Lesson postedLesson = updateLessonInfo(project, lesson, showNotification);
+                                 boolean showNotification, int sectionId) {
+    Lesson postedLesson = updateLessonInfo(project, lesson, showNotification, sectionId);
 
     if (postedLesson != null) {
       updateLessonTasks(project, lesson, postedLesson);
@@ -742,7 +735,7 @@ public class CCStepikConnector {
 
     // Remove all tasks from Stepik which are not in our lessons now
     for (Integer step : taskIdsToDelete) {
-      deleteTask(step, project);
+      deleteTask(project, step);
     }
 
     for (Task task : localLesson.getTaskList()) {
@@ -814,8 +807,26 @@ public class CCStepikConnector {
     notification.notify(project);
   }
 
-  public static int postLesson(@NotNull final Project project, @NotNull final Lesson lesson) {
-    if (!checkIfAuthorized(project, "postLesson")) return -1;
+  public static int postLesson(@NotNull final Project project, @NotNull final Lesson lesson, int position, int sectionId) {
+    Lesson postedLesson = postLessonInfo(project, lesson, sectionId);
+
+    if (postedLesson == null) {
+      return -1;
+    }
+    lesson.setId(postedLesson.getId());
+    for (Task task : lesson.getTaskList()) {
+      final ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
+      if (indicator != null) {
+        indicator.checkCanceled();
+      }
+      postTask(project, task, postedLesson.getId());
+    }
+
+    return postedLesson.getId();
+  }
+
+  public static Lesson postLessonInfo(@NotNull Project project, @NotNull Lesson lesson, int sectionId) {
+    if (!checkIfAuthorized(project, "postLesson")) return null;
     Course course = StudyTaskManager.getInstance(project).getCourse();
     assert course != null;
 
@@ -824,9 +835,10 @@ public class CCStepikConnector {
     String requestBody = new Gson().toJson(new StepikWrappers.LessonWrapper(lesson));
     request.setEntity(new StringEntity(requestBody, ContentType.APPLICATION_JSON));
 
+    Lesson postedLesson = null;
     try {
       final CloseableHttpClient client = StepikAuthorizedClient.getHttpClient();
-      if (client == null) return -1;
+      if (client == null) return null;
       final CloseableHttpResponse response = client.execute(request);
       final HttpEntity responseEntity = response.getEntity();
       final String responseString = responseEntity != null ? EntityUtils.toString(responseEntity) : "";
@@ -840,27 +852,18 @@ public class CCStepikConnector {
         final String detailString = detail != null ? detail.getAsString() : responseString;
 
         showErrorNotification(project, message, detailString);
-        return 0;
+        return null;
       }
 
-      final Lesson postedLesson = getLessonFromString(responseString);
-      if (postedLesson == null) {
-        return -1;
+      postedLesson = getLessonFromString(responseString);
+      if (postedLesson != null) {
+        postedLesson.unitId = postUnit(postedLesson.getId(), lesson.getIndex(), sectionId, project);
       }
-      lesson.setId(postedLesson.getId());
-      for (Task task : lesson.getTaskList()) {
-        final ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
-        if (indicator != null) {
-          indicator.checkCanceled();
-        }
-        postTask(project, task, postedLesson.getId());
-      }
-      return postedLesson.getId();
     }
     catch (IOException e) {
       LOG.error(e.getMessage());
     }
-    return -1;
+    return postedLesson;
   }
 
   private static void checkCancelled() {
@@ -893,7 +896,12 @@ public class CCStepikConnector {
     deleteFromStepik(project, request);
   }
 
-  public static void deleteTask(@NotNull final Integer task, Project project) {
+  public static void deleteLesson(@NotNull Project project, final int lessonId) {
+    final HttpDelete request = new HttpDelete(StepikNames.STEPIK_API_URL + StepikNames.SECTIONS + "/" + lessonId);
+    deleteFromStepik(project, request);
+  }
+
+  public static void deleteTask(@NotNull Project project, int task) {
     final HttpDelete request = new HttpDelete(StepikNames.STEPIK_API_URL + StepikNames.STEP_SOURCES + task);
     deleteFromStepik(project, request);
   }

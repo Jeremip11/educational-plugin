@@ -13,10 +13,12 @@ import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.jetbrains.edu.coursecreator.CCUtils;
+import com.jetbrains.edu.coursecreator.stepik.StepikCourseUploader;
 import com.jetbrains.edu.learning.StudyTaskManager;
 import com.jetbrains.edu.learning.courseFormat.*;
 import com.jetbrains.edu.learning.courseFormat.ext.CourseExt;
 import com.jetbrains.edu.learning.statistics.EduUsagesCollector;
+import com.jetbrains.edu.learning.stepik.StepikUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -76,7 +78,7 @@ public class CCPushCourse extends DumbAwareAction {
         @Override
         public void run(@NotNull ProgressIndicator indicator) {
           indicator.setIndeterminate(false);
-          if (updateCourseInfo(project, (RemoteCourse) course)) {
+          if (updateCourseInfo(project, (RemoteCourse)course)) {
             updateCourseContent(indicator, course, project);
             setStatusRecursively(course, StepikChangeStatus.UP_TO_DATE);
             try {
@@ -85,8 +87,14 @@ public class CCPushCourse extends DumbAwareAction {
             catch (IOException e1) {
               LOG.warn(e1);
             }
-            showNotification(project, "Course is updated", openOnStepikAction("/course/" + course.getId())
-            );
+            showNotification(project, "Course is updated", openOnStepikAction("/course/" + course.getId()));
+            new StepikCourseUploader(project, (RemoteCourse)course).updateCourse();
+            try {
+              updateAdditionalMaterials(project, course.getId());
+            }
+            catch (IOException e) {
+              LOG.warn(e);
+            }
           }
         }
       });
@@ -127,13 +135,12 @@ public class CCPushCourse extends DumbAwareAction {
     }
 
     for (Lesson lesson : course.getLessons()) {
+      Integer sectionId = StepikUtils.getTopLevelSectionId(project, (RemoteCourse)course);
       if (lesson.getId() > 0) {
-        updateLesson(project, lesson, false);
+        updateLesson(project, lesson, false, sectionId);
       }
       else {
-        int lessonId = postLesson(project, lesson);
-        Integer sectionId = ((RemoteCourse)course).getSectionIds().get(0);
-        lesson.unitId = postUnit(lessonId, lesson.getIndex(), sectionId, project);
+        postLesson(project, lesson, position, sectionId);
       }
     }
   }
