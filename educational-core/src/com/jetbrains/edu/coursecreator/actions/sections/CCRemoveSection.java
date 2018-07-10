@@ -13,6 +13,7 @@ import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.jetbrains.edu.coursecreator.CCUtils;
+import com.jetbrains.edu.coursecreator.configuration.YamlFormatSynchronizer;
 import com.jetbrains.edu.learning.EduUtils;
 import com.jetbrains.edu.learning.StudyTaskManager;
 import com.jetbrains.edu.learning.courseFormat.Course;
@@ -69,6 +70,7 @@ public class CCRemoveSection extends DumbAwareAction {
                                    sectionIndex-1, lessonsFromSection.size());
       course.addLessons(lessonsFromSection);
       course.sortItems();
+      YamlFormatSynchronizer.saveItem(course);
     }
 
     ProjectView.getInstance(project).refresh();
@@ -81,7 +83,12 @@ public class CCRemoveSection extends DumbAwareAction {
         final VirtualFile[] children = VfsUtil.getChildren(file);
         for (VirtualFile child : children) {
           try {
-            child.move(this, courseDir);
+            if (YamlFormatSynchronizer.isConfigFile(child)) {
+              child.delete(this);
+            }
+            else {
+              child.move(this, courseDir);
+            }
           }
           catch (IOException e) {
             LOG.error("Failed to move lesson " + child.getName() + " out of section");
