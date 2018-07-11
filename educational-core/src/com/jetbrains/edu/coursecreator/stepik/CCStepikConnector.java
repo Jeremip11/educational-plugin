@@ -224,6 +224,7 @@ public class CCStepikConnector {
       List<Lesson> lessons = ((Section)item).getLessons();
 
       final int sectionId = postSectionInfo(project, section, course.getId());
+      ((Section)item).setId(sectionId);
 
       postLessons(project, indicator, course, sectionId, lessons);
     }
@@ -277,6 +278,7 @@ public class CCStepikConnector {
     RemoteCourse course = (RemoteCourse)StudyTaskManager.getInstance(project).getCourse();
     assert course != null;
     final int sectionId = postSectionInfo(project, copySection(section), course.getId());
+    section.setId(sectionId);
     postLessons(project, indicator, course, sectionId, section.getLessons());
 
     return sectionId;
