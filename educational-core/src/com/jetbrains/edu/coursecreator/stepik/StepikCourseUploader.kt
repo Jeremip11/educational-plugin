@@ -78,7 +78,12 @@ class StepikCourseUploader(val project: Project, val course: RemoteCourse) {
     lessonsToPush.forEach {
       val sectionId: Int = sectionId(it)
 
-      postLessonInfo(project, it, sectionId, it.index)
+      val posted = postLessonInfo(project, it, sectionId, it.index)
+      it.id = posted.id
+      it.unitId = posted.unitId
+      for (task in it.taskList) {
+        postTask(project, task, it.id)
+      }
     }
 
     lessonsToMove.forEach {
