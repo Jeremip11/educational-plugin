@@ -1,14 +1,12 @@
 package com.jetbrains.edu.coursecreator.actions.taskFile;
 
 import com.intellij.ide.projectView.ProjectView;
-import com.intellij.openapi.command.undo.BasicUndoableAction;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.TextEditor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.jetbrains.edu.coursecreator.actions.taskFile.CCTaskFileActionBase;
 import com.jetbrains.edu.learning.EduUtils;
 import com.jetbrains.edu.learning.NewPlaceholderPainter;
 import com.jetbrains.edu.learning.courseFormat.AnswerPlaceholder;
@@ -36,26 +34,22 @@ public class CCHideFromStudent extends CCTaskFileActionBase {
     EduUtils.runUndoableAction(project, ACTION_NAME, new HideTaskFile(project, file, task, taskFile));
   }
 
-  private static class HideTaskFile extends BasicUndoableAction {
+  private static class HideTaskFile extends TaskUndoableAction {
 
     private final Project myProject;
-    private final VirtualFile myFile;
-    private final Task myTask;
     private final TaskFile myTaskFile;
 
     public HideTaskFile(Project project, VirtualFile file, Task task, TaskFile taskFile) {
-      super(file);
+      super(task, file);
       myProject = project;
-      myFile = file;
-      myTask = task;
       myTaskFile = taskFile;
     }
 
     @Override
-    public void undo() {
-      myTask.getTaskFiles().put(EduUtils.pathRelativeToTask(myProject, myFile), myTaskFile);
-      if (!myTaskFile.getAnswerPlaceholders().isEmpty() && FileEditorManager.getInstance(myProject).isFileOpen(myFile)) {
-        for (FileEditor fileEditor : FileEditorManager.getInstance(myProject).getEditors(myFile)) {
+    public void performUndo() {
+      task.getTaskFiles().put(EduUtils.pathRelativeToTask(myProject, file), myTaskFile);
+      if (!myTaskFile.getAnswerPlaceholders().isEmpty() && FileEditorManager.getInstance(myProject).isFileOpen(file)) {
+        for (FileEditor fileEditor : FileEditorManager.getInstance(myProject).getEditors(file)) {
           if (fileEditor instanceof TextEditor) {
             Editor editor = ((TextEditor)fileEditor).getEditor();
             EduUtils.drawAllAnswerPlaceholders(editor, myTaskFile);
@@ -66,8 +60,8 @@ public class CCHideFromStudent extends CCTaskFileActionBase {
     }
 
     @Override
-    public void redo() {
-      hideFromStudent(myFile, myProject, myTask.getTaskFiles(), myTaskFile);
+    public void performRedo() {
+      hideFromStudent(file, myProject, task.getTaskFiles(), myTaskFile);
       ProjectView.getInstance(myProject).refresh();
     }
 
