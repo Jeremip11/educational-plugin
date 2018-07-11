@@ -524,6 +524,12 @@ public class StepikConnector {
       .collect(Collectors.toList());
   }
 
+  @NotNull
+  public static List<Unit> getUnits(String[] unitIds) throws URISyntaxException, IOException {
+    List<UnitContainer> unitContainers = multipleRequestToStepik(StepikNames.UNITS, unitIds, UnitContainer.class);
+    return unitContainers.stream().flatMap(container -> container.units.stream()).collect(Collectors.toList());
+  }
+
   public static List<Lesson> getLessons(RemoteCourse remoteCourse) throws IOException {
     try {
       String[] unitIds = getUnitsIds(remoteCourse);
