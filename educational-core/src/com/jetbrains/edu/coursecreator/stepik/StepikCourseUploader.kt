@@ -112,6 +112,7 @@ class StepikCourseUploader(val project: Project, val course: RemoteCourse) {
 
   private fun updateSections() {
     sectionsToPush.forEach {
+      it.position = it.index
       val sectionId = postSectionInfo(project, copySection(it), course.id)
       it.id = sectionId
     }
