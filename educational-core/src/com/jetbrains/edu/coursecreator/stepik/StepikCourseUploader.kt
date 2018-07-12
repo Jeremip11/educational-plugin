@@ -89,7 +89,7 @@ class StepikCourseUploader(val project: Project, val course: RemoteCourse) {
     lessonsToMove.forEach {
       val sectionId = if (it.section == null) StepikUtils.getTopLevelSectionId(project, course) else it.section!!.id
       deleteUnit(it.unitId)
-      postUnit(it.id, it.index, sectionId, project)
+      it.unitId = postUnit(it.id, it.index, sectionId, project)
     }
 
     lessonsToDelete.forEach {
@@ -180,6 +180,8 @@ class StepikCourseUploader(val project: Project, val course: RemoteCourse) {
                                            deleteCandidates: ArrayList<Int>,
                                            sectionFromServer: Section) {
     lessonsToPush.addAll(section.lessons.filter { it.id == 0 })
+    val lessonFromServerIds = sectionFromServer.units
+    lessonsToMove.addAll(section.lessons.filter { it.id > 0 }.filter { it.unitId !in lessonFromServerIds })
 
     val localSectionUnits = section.lessons.map { it.unitId }
     val allLocalUnits = course.allLessons().map { it.unitId }
@@ -213,12 +215,6 @@ class StepikCourseUploader(val project: Project, val course: RemoteCourse) {
           // do nothing
         }
       }
-    }
-
-    val lessonsToMoveIds = lessonsToMove.map { it.id }
-    val lessonsInfoAlreadyUpdated = lessonsInfoToUpdate.filter { it.id in lessonsToMoveIds }
-    for (lesson in lessonsInfoAlreadyUpdated) {
-      lessonsInfoToUpdate.remove(lesson)
     }
 
     lessonsToDelete.addAll(StepikConnector.getUnits(
