@@ -86,10 +86,12 @@ public class CCVirtualFileListener implements VirtualFileListener {
     if (section != null) {
       CCUtils.updateHigherElements(parentDir.getChildren(), file -> section.getLesson(file.getName()), removedLesson.getIndex(), -1);
       section.removeLesson(removedLesson);
+      YamlFormatSynchronizer.saveItem(section);
     }
     else {
       CCUtils.updateHigherElements(parentDir.getChildren(), file -> course.getItem(file.getName()), removedLesson.getIndex(), -1);
       course.removeLesson(removedLesson);
+      YamlFormatSynchronizer.saveItem(course);
     }
   }
 
@@ -101,6 +103,7 @@ public class CCVirtualFileListener implements VirtualFileListener {
     final VirtualFile parentDir = removedFile.getParent();
     CCUtils.updateHigherElements(parentDir.getChildren(), file -> course.getItem(file.getName()), removedSection.getIndex(), -1);
     course.removeSection(removedSection);
+    YamlFormatSynchronizer.saveItem(course);
   }
 
   private static void deleteTask(@NotNull final Course course, @NotNull final VirtualFile removedTask) {
@@ -114,6 +117,7 @@ public class CCVirtualFileListener implements VirtualFileListener {
     }
     CCUtils.updateHigherElements(lessonDir.getChildren(), file -> lesson.getTask(file.getName()), task.getIndex(), -1);
     lesson.getTaskList().remove(task);
+    YamlFormatSynchronizer.saveItem(lesson);
   }
 
   private static void deleteTaskFile(@NotNull Project project, @NotNull final VirtualFile removedTaskFile, @NotNull TaskFile taskFile) {
