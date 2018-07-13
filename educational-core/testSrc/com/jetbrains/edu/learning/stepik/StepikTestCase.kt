@@ -2,9 +2,7 @@ package com.jetbrains.edu.learning.stepik
 
 import com.jetbrains.edu.learning.EduSettings
 import com.jetbrains.edu.learning.EduTestCase
-import com.jetbrains.edu.learning.EduUtils
 import com.jetbrains.edu.learning.StudyTaskManager
-import com.jetbrains.edu.learning.courseFormat.Course
 import com.jetbrains.edu.learning.courseFormat.RemoteCourse
 import org.apache.http.Consts
 import org.apache.http.NameValuePair
@@ -26,7 +24,7 @@ abstract class StepikTestCase : EduTestCase() {
     private const val CSRF = "csrfmiddlewaretoken"
   }
 
-  private lateinit var user: StepicUser
+  protected lateinit var user: StepicUser
 
   private lateinit var httpClient: CloseableHttpClient
 
@@ -92,20 +90,15 @@ abstract class StepikTestCase : EduTestCase() {
   }
 
   fun checkCourseUploaded(course: RemoteCourse) {
-    val uploadedCourse = findUploadedCourse(course)
+    val uploadedCourse = StepikConnector.getCourseFromStepik(user, course.id, true)
     assertNotNull("Uploaded courses not found among courses available to instructor", uploadedCourse)
     println("Course with id ${(uploadedCourse as RemoteCourse).id} was uploaded successfully")
   }
 
-  protected fun findUploadedCourse(course: RemoteCourse): Course? {
-    val courses = EduUtils.getCoursesUnderProgress()
-    assertTrue(courses!!.size >= 1)
-    return courses.find { c -> (c is RemoteCourse) && (c.id == course.id) && (c.name == course.name) }
-  }
-
   private fun getTokens(): StepikWrappers.TokenInfo? {
     val parameters = ArrayList<NameValuePair>(listOf(BasicNameValuePair ("grant_type", "client_credentials")))
-    val clientSecret = System.getenv("STEPIK_TEST_CLIENT_SECRET")
+//    val clientSecret = System.getenv("STEPIK_TEST_CLIENT_SECRET")
+    val clientSecret = "dIoYkgZDJNJM7riSEkeO7tyGJKe4ubxJAUKSmNKrj5iNoPKHkDRO4iugJw5NA9NTyOka0X6OSzW93a9rg0B3NGpRAkMCLybe8nUKwKrktX9SlACzQc5BOWoH9jaBbhFN"
     if (clientSecret == null || clientSecret.isEmpty()) {
       LOG.error("Test client secret is not provided")
       return null
