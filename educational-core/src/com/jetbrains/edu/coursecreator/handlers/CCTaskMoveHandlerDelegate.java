@@ -18,6 +18,7 @@ import com.intellij.psi.PsiReference;
 import com.intellij.refactoring.move.MoveCallback;
 import com.intellij.refactoring.move.MoveHandlerDelegate;
 import com.jetbrains.edu.coursecreator.CCUtils;
+import com.jetbrains.edu.coursecreator.configuration.YamlFormatSynchronizer;
 import com.jetbrains.edu.coursecreator.ui.CCMoveStudyItemDialog;
 import com.jetbrains.edu.learning.EduNames;
 import com.jetbrains.edu.learning.EduUtils;
@@ -94,6 +95,7 @@ public class CCTaskMoveHandlerDelegate extends MoveHandlerDelegate {
       return;
     }
 
+    Lesson sourceLesson = taskToMove.getLesson();
     if (EduUtils.isLessonDirectory(project, targetVFile)) {
       //if user moves task to any lesson, this task is inserted as the last task in this lesson
       Lesson targetLesson = EduUtils.getLesson(targetVFile, course);
@@ -107,6 +109,8 @@ public class CCTaskMoveHandlerDelegate extends MoveHandlerDelegate {
       List<Task> taskList = targetLesson.getTaskList();
       moveTask(sourceDirectory, taskToMove, taskList.isEmpty() ? null : taskList.get(taskList.size() - 1),
                1, targetVFile, targetLesson);
+      YamlFormatSynchronizer.saveItem(sourceLesson);
+      YamlFormatSynchronizer.saveItem(targetLesson);
     }
     else {
       VirtualFile lessonDir = targetVFile.getParent();
@@ -119,6 +123,8 @@ public class CCTaskMoveHandlerDelegate extends MoveHandlerDelegate {
       }
       final int delta = getDelta(project, targetTask);
       moveTask(sourceDirectory, taskToMove, targetTask, delta, lessonDir, targetTask.getLesson());
+      YamlFormatSynchronizer.saveItem(sourceLesson);
+      YamlFormatSynchronizer.saveItem(targetTask.getLesson());
     }
     ProjectView.getInstance(project).refresh();
   }
