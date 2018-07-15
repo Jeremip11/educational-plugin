@@ -67,24 +67,9 @@ public class CCPushCourse extends DumbAwareAction {
         @Override
         public void run(@NotNull ProgressIndicator indicator) {
           indicator.setIndeterminate(false);
-          if (updateCourseInfo(project, (RemoteCourse)course)) {
-            updateCourseContent(indicator, course, project);
-            setStatusRecursively(course, StepikChangeStatus.UP_TO_DATE);
-            try {
-              updateAdditionalMaterials(project, course.getId());
-            }
-            catch (IOException e1) {
-              LOG.warn(e1);
-            }
-            showNotification(project, "Course is updated", openOnStepikAction("/course/" + course.getId()));
-            new StepikCourseUploader(project, (RemoteCourse)course).updateCourse();
-            try {
-              updateAdditionalMaterials(project, course.getId());
-            }
-            catch (IOException e) {
-              LOG.warn(e);
-            }
-          }
+          new StepikCourseUploader(project, (RemoteCourse)course).updateCourse();
+          showNotification(project, "Course is updated", openOnStepikAction("/course/" + course.getId()));
+          setStatusRecursively(course, StepikChangeStatus.UP_TO_DATE);
         }
       });
     }
