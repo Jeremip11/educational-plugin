@@ -9,7 +9,7 @@ import com.jetbrains.edu.learning.checker.CheckUtils
 import com.jetbrains.edu.learning.checker.TaskChecker
 import com.jetbrains.edu.learning.courseFormat.tasks.EduTask
 
-class GradleEduTaskChecker(task: EduTask, project: Project) : TaskChecker<EduTask>(task, project) {
+open class GradleEduTaskChecker(task: EduTask, project: Project) : TaskChecker<EduTask>(task, project) {
   override fun check(): CheckResult {
     val taskName = "${getGradleProjectName(task)}:test"
     val cmd = generateGradleCommandLine(
