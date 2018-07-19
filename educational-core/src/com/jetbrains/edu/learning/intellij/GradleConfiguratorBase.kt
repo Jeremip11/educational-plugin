@@ -1,24 +1,32 @@
 package com.jetbrains.edu.learning.intellij
 
-import com.intellij.ide.fileTemplates.FileTemplateManager
+import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.util.containers.ContainerUtil
 import com.jetbrains.edu.learning.EduConfigurator
 import com.jetbrains.edu.learning.EduNames
+import com.jetbrains.edu.learning.intellij.generation.EduGradleUtils
 import org.jetbrains.plugins.gradle.util.GradleConstants
 import java.io.File
+import java.io.IOException
 
 abstract class GradleConfiguratorBase : EduConfigurator<JdkProjectSettings> {
 
-  override fun excludeFromArchive(path: String): Boolean {
+  abstract override fun getCourseBuilder(): GradleCourseBuilderBase
+
+  override fun excludeFromArchive(project: Project, path: String): Boolean {
     val pathSegments = FileUtil.splitPath(path)
     val name = pathSegments.last()
     if (GradleConstants.SETTINGS_FILE_NAME == name) {
-      val courseBuilder = courseBuilder as GradleCourseBuilderBase
-      val templateText = FileTemplateManager.getDefaultInstance().getInternalTemplate(courseBuilder.settingGradleTemplateName).getText(
-        courseBuilder.configMap)
-      return FileUtil.loadFile(File(path)) == templateText
+      try {
+        val settingsDefaultText = EduGradleUtils.getInternalTemplateText(courseBuilder.settingGradleTemplateName, courseBuilder.getConfigVariables(project))
+        return FileUtil.loadFile(File(path)) == settingsDefaultText
+      }
+      catch (e: IOException) {
+        LOG.error(e)
+      }
     }
     return name in NAMES_TO_EXCLUDE || pathSegments.any { it in FOLDERS_TO_EXCLUDE } || "iml" == FileUtilRt.getExtension(name)
   }
@@ -34,5 +42,7 @@ abstract class GradleConfiguratorBase : EduConfigurator<JdkProjectSettings> {
       GradleConstants.SETTINGS_FILE_NAME, "gradle-wrapper.jar", "gradle-wrapper.properties")
 
     private val FOLDERS_TO_EXCLUDE = ContainerUtil.newHashSet(EduNames.OUT, EduNames.BUILD)
+
+    private val LOG = Logger.getInstance(GradleConfiguratorBase::class.java)
   }
 }
