@@ -8,7 +8,6 @@ import com.jetbrains.edu.learning.courseFormat.Lesson
 import com.jetbrains.edu.learning.courseFormat.RemoteCourse
 import com.jetbrains.edu.learning.courseFormat.Section
 import com.jetbrains.edu.learning.courseFormat.StepikChangeStatus
-import com.jetbrains.edu.learning.courseFormat.ext.setPushed
 import com.jetbrains.edu.learning.courseFormat.tasks.Task
 import com.jetbrains.edu.learning.stepik.StepikConnector
 import com.jetbrains.edu.learning.stepik.StepikUtils
@@ -45,7 +44,8 @@ class StepikCourseUploader(val project: Project, val course: RemoteCourse) {
     }
     else {
       pushChanges()
-      course.setPushed()
+
+      course.setStatusRecursively(StepikChangeStatus.UP_TO_DATE)
     }
   }
 
@@ -327,3 +327,26 @@ private fun RemoteCourse.lastUpdateDate(): Date {
 }
 
 private fun RemoteCourse.allLessons() = lessons.plus(sections.flatMap { it.lessons })
+
+private fun RemoteCourse.setStatusRecursively(status: StepikChangeStatus) {
+  stepikChangeStatus = status
+  for (item in items) {
+    item.stepikChangeStatus = status
+
+    if (item is Lesson) {
+      item.setStatusRecursively(status)
+    }
+
+    if (item is Section) {
+      for (lesson in item.lessons) {
+        lesson.setStatusRecursively(status)
+      }
+    }
+  }
+}
+
+private fun Lesson.setStatusRecursively(status: StepikChangeStatus) {
+  taskList.forEach {
+    it.stepikChangeStatus = status
+  }
+}

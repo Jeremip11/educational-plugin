@@ -17,7 +17,6 @@ import com.jetbrains.edu.coursecreator.stepik.StepikCourseUploader;
 import com.jetbrains.edu.learning.StudyTaskManager;
 import com.jetbrains.edu.learning.courseFormat.Course;
 import com.jetbrains.edu.learning.courseFormat.RemoteCourse;
-import com.jetbrains.edu.learning.courseFormat.*;
 import com.jetbrains.edu.learning.courseFormat.ext.CourseExt;
 import com.jetbrains.edu.learning.statistics.EduUsagesCollector;
 import org.jetbrains.annotations.NotNull;
@@ -69,7 +68,6 @@ public class CCPushCourse extends DumbAwareAction {
           indicator.setIndeterminate(false);
           new StepikCourseUploader(project, (RemoteCourse)course).updateCourse();
           showNotification(project, "Course is updated", openOnStepikAction("/course/" + course.getId()));
-          setStatusRecursively(course, StepikChangeStatus.UP_TO_DATE);
         }
       });
     }
@@ -101,59 +99,6 @@ public class CCPushCourse extends DumbAwareAction {
           wrapUnpushedLessonsIntoSections(project, course);
         }
       }
-    }
-  }
-
-  private static void updateCourseContent(@NotNull ProgressIndicator indicator, Course course, Project project) {
-    if (!((RemoteCourse)course).getSectionIds().isEmpty() && course.getLessons().isEmpty()) {
-      deleteSection(project, ((RemoteCourse)course).getSectionIds().get(0));
-      ((RemoteCourse)course).setSectionIds(Collections.emptyList());
-    }
-
-    int position = 1 + (CourseExt.getHasTopLevelLessons(course) ? 1 : 0);
-    for (Section section : course.getSections()) {
-      section.setPosition(position++);
-      if (section.getId() > 0) {
-        updateSection(project, section);
-      }
-      else {
-        postSection(project, section, indicator);
-        updateAdditionalSection(project);
-      }
-    }
-
-    for (Lesson lesson : course.getLessons()) {
-      Integer sectionId = StepikUtils.getTopLevelSectionId(project, (RemoteCourse)course);
-      if (lesson.getId() > 0) {
-        updateLesson(project, lesson, false, sectionId);
-      }
-      else {
-        postLesson(project, lesson, position, sectionId);
-      }
-    }
-  }
-
-
-  private static void setStatusRecursively(@NotNull Course course,
-                                           @SuppressWarnings("SameParameterValue") @NotNull StepikChangeStatus status) {
-    for (StudyItem item : course.getItems()) {
-      item.setStepikChangeStatus(status);
-      if (item instanceof Section) {
-        for (Lesson lesson : ((Section)item).getLessons()) {
-          setLessonStatus(lesson, status);
-        }
-      }
-
-      if (item instanceof Lesson) {
-        setLessonStatus((Lesson)item, status);
-      }
-    }
-  }
-
-  private static void setLessonStatus(@NotNull Lesson lesson, @NotNull StepikChangeStatus status) {
-    lesson.setStepikChangeStatus(status);
-    for (com.jetbrains.edu.learning.courseFormat.tasks.Task task : lesson.taskList) {
-      task.setStepikChangeStatus(status);
     }
   }
 }

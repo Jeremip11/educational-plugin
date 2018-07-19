@@ -54,7 +54,7 @@ object StepikUtils {
     return "<div class=\"footer\"><a href=$link>Leave a comment</a></div>"
   }
 
-  private fun getLink(task: Task?, stepNumber: Int): String? {
+  fun getLink(task: Task?, stepNumber: Int): String? {
     if (task == null) {
       return null
     }
