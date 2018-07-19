@@ -21,7 +21,8 @@ abstract class GradleConfiguratorBase : EduConfigurator<JdkProjectSettings> {
     val name = pathSegments.last()
     if (GradleConstants.SETTINGS_FILE_NAME == name) {
       try {
-        val settingsDefaultText = EduGradleUtils.getInternalTemplateText(courseBuilder.settingGradleTemplateName, courseBuilder.getConfigVariables(project))
+        val settingsDefaultText = EduGradleUtils.getInternalTemplateText(courseBuilder.settingGradleTemplateName,
+                                                                         courseBuilder.getConfigVariables(project))
         return FileUtil.loadFile(File(path)) == settingsDefaultText
       }
       catch (e: IOException) {
